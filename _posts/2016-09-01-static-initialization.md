@@ -1,12 +1,12 @@
 ---
 layout: post
 title: Ordering Static Initialization
-date: 2016-03-02
+date: 2016-09-01
 published: true
 tags: c++, idioms, schwartz, nifty
 ---
 
-In this post we'll discuss the problem of initializating global variables with `static` storage duration, and I'll show you a solution which I particularly like.
+In this post we'll discuss the problem of initializating global variables with `static` storage duration, and I'll show you the best solution which C++ has to offer.
 
 C++ makes some rather sparse guarantees about the initialization of such global variables:
 
@@ -38,8 +38,6 @@ public:
 {% highlight cpp %}
 // Log.cpp
 #include "Log.h"
-#include <cstdarg>
-#include <cstdio>
 
 Log Log::s_instance;
 
@@ -85,12 +83,12 @@ Subsystem::~Subsystem() {
 }
 {% endhighlight %}
 
-Obviously this relies on `Log::s_instance` being initialized **before** `Subsystem::s_instance`. If not, our calls to `Log::write()` will fail because the file was not created. Unfortunately there is no guarantee that this will be the case. We are entirely at the whim of the compiler; `Log::s_instance` might be initialized before `Subsystem::s_instance` or vice-versa. We just don't know.
+Obviously this relies on `Log::s_instance` being initialized **before** `Subsystem::s_instance`. If not, our calls to `Log::write()` will fail because the file was not created. Unfortunately there is no guarantee that this is the case. We are entirely at the whim of the compiler; `Log::s_instance` might be initialized before `Subsystem::s_instance` or vice versa. We just don't know.
 
-_With VS2012 I was able to get this code to fail consistently by ensuring that the `Subsystem` files appeared before the `Log` files inside the vcxproj._
+_With VS2012 I was able to get this code to fail consistently by ensuring that the `Subsystem` files appeared before the `Log` files inside the .vcxproj._
 
-## Solution 1: Lazy Construction ##
-One solution would be to use 'lazy' construction. During `Log::write()` we simply check if the file was created and, if it wasn't, we create it: 
+## Solution 1: Lazy Initialization ##
+One solution would be to use 'lazy' initialization. During `Log::write()` we simply check if the file was created and create it if it wasn't:
 
 {% highlight cpp %}
 void Log::write(const char* _msg) {
@@ -101,7 +99,7 @@ void Log::write(const char* _msg) {
 }
 {% endhighlight %}
 
-This is simple and it works. But what about deinitialization? That problem remains - it's still possible that `~Log()` will be called before `~Subsystem()`, which means that there is no sensible place to close our log file.
+This is simple and it works. But what about deinitialization? The problem remains - it's still possible that `~Log()` will be called before `~Subsystem()`, which means that there is no sensible place to close our log file.
 
 ## Solution 2: Explicit Initialization/Deinitialization ##
 
@@ -122,7 +120,7 @@ int main(int, char**) {
 }
 {% endhighlight %}
 
-This is a complete solution, but not a particularly elegant one. It depends entirely on the programmer to order the dependencies, which becomes a maintenance nightmare as the number of `Init()`/`Shutdown()` pairs increases. Determining the dependencies is a hard problem for any non-trivial example, and what if the dependencies change and we forget to change the order of `Init()`/`Shutdown()` calls? Bad bad bad.
+This is a complete solution, but not a particularly elegant one. It depends entirely on the client code to order the dependencies, which becomes a maintenance nightmare as the number of `Init()`/`Shutdown()` pairs increases. Determining the order of dependencies is a hard problem for any non-trivial example, and what if the dependencies change and we forget to change the order of `Init()`/`Shutdown()` calls? Bad bad bad.
 
 ## Solution 3: Schwarz Counter ##
 
@@ -177,6 +175,12 @@ _I've allocated `Log::s_instance` on the heap for brevity, but you can imagine o
 
 As you can see, we use `s_count` to ensure that the ctor/dtor are called exactly once, on the first and last calls to `LogInit()` and `~LogInit()` respectively. Because each translation unit gets its own `LogInit` instance, whichever 'goes first' during the pre-main initialization will increment `s_count` to 1 and subsequently call the `Log` ctor. Conversely, whichever translation unit 'goes last' during the post-main deinitialzation will decrement `s_count` to 0 and call the `Log` dtor. Adding new dependencies 'just works' - we never have to worry about getting the initialization order right since the counter handles this for us. With one exception:
 
-### Cyclic Dependencies ##
+## Initialization Dependencies ##
 
-What if `Log` depends on another singleton `File` to create the log file, but `File` also depends on `Log`. 
+What if `Log` depends on another singleton `FileSystem` (to create the log file), but `FileSystem` also depends on `Log` (to print an error message)? The Schwarz counter idiom can't help us here: there's no way to order the initialization of `Log` and `FileSystem` which works. 
+
+The only advice in this case is to avoid cyclic dependencies like this - remove any `Log->write()` calls from the `FileSystem` ctor/dtor, or vice versa. Hopefully these cases will be quite rare and easy to resolve by design. The key point here is that you should add a liberal sprinkling of `assert()`s to make sure that this problem is easy to catch and quick to diagnose and fix.
+
+## Conclusion ##
+
+So that's the Schwarz counter - hopefully you can see why it's also called 'Nifty'. If you're writing any software with non-trivial global state (as in the examples) you should be using this idiom.
