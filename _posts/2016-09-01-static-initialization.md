@@ -12,7 +12,7 @@ C++ makes some rather sparse guarantees about the initialization of such global 
 
 - Storage for them is zero-initialized.
 - Initialization happens either prior to the first statement of the main function, or before the first use of the variable.
-- The order of initialization is guaranteed to happen in the same order as the variable declarations appear, __within a single translation unit__. Initialization order _between_ translation units is not guaranteed.
+- The order of initialization is guaranteed to happen in the same order as the variable declarations appear __within a single translation unit__. Initialization order _between_ translation units is not guaranteed.
 
 In this post we're most concerned with that last one: how can we order the initialization of `static` globals to reflect dependencies in our code?
 
@@ -85,7 +85,7 @@ Subsystem::~Subsystem() {
 
 Obviously this relies on `Log::s_instance` being initialized **before** `Subsystem::s_instance`. If not, our calls to `Log::write()` will fail because the file was not created. Unfortunately there is no guarantee that this is the case. We are entirely at the whim of the compiler; `Log::s_instance` might be initialized before `Subsystem::s_instance` or vice versa. We just don't know.
 
-_With VS2012 I was able to get this code to fail consistently by ensuring that the `Subsystem` files appeared before the `Log` files inside the .vcxproj._
+_With Visual Studio I was able to get this code to fail consistently by ensuring that the `Subsystem` files appeared before the `Log` files inside the .vcxproj._
 
 ## Solution 1: Lazy Initialization ##
 One solution would be to use 'lazy' initialization. During `Log::write()` we simply check if the file was created and create it if it wasn't:
@@ -128,7 +128,6 @@ And so at last we come to the 'Schwarz' or 'Nifty' counter. The idea is simple: 
 
 {% highlight cpp %}
 // Log.h
-#include <cstdio>
 
 class Log {
 	friend class LogInit;
@@ -154,14 +153,13 @@ This means that every translation unit which includes `Log.h` will get it's own 
 Log* Log::s_instance;
 int LogInit::s_count;
 
-LogInit::LogInit(){
+LogInit::LogInit() {
 	if (++s_count == 1) {
 		Log::s_instance = new Log();
 	}
 }
 
-LogInit::~LogInit()
-{
+LogInit::~LogInit() {
 	if (--s_count == 0) {
 		delete Log::s_instance;
 	}
@@ -178,9 +176,9 @@ As you can see, we use `s_count` to ensure that the ctor/dtor are called exactly
 ## Initialization Dependencies ##
 
 What if `Log` depends on another singleton `FileSystem` (to create the log file), but `FileSystem` also depends on `Log` (to print an error message)? The Schwarz counter idiom can't help us here: there's no way to order the initialization of `Log` and `FileSystem` which works. 
+The only advice in this case is to avoid cyclic dependencies like this - remove any `Log->write()` calls from the `FileSystem` ctor/dtor, or vice versa, plus drop an `assert` in `GetInstance()` to check that the init happened. Hopefully these cases will be quite rare and easy to resolve by design. Note that this problem only applies to dependencies in the initialization/deinitialization.
 
-The only advice in this case is to avoid cyclic dependencies like this - remove any `Log->write()` calls from the `FileSystem` ctor/dtor, or vice versa. Hopefully these cases will be quite rare and easy to resolve by design. The key point here is that you should add a liberal sprinkling of `assert()`s to make sure that this problem is easy to catch and quick to diagnose and fix.
 
 ## Conclusion ##
 
-So that's the Schwarz counter - hopefully you can see why it's also called 'Nifty'. If you're writing any software with non-trivial global state (as in the examples) you should be using this idiom.
+So that's the Schwarz counter - hopefully you can see why it's also called 'Nifty'. If you're writing any software with non-trivial global state (as in the examples), you should be using this idiom.
