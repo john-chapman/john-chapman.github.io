@@ -2,6 +2,7 @@
 layout: post
 title: Ordering Static Initialization
 date: 2016-09-01
+comments: true
 published: true
 tags: c++, idioms, schwartz, nifty
 ---
