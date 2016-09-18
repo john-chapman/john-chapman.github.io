@@ -28,7 +28,7 @@ $content-width:    1024px;
 $on-palm:          600px;
 $on-laptop:        1024px;
 
-
+$header-bg-url:        "{{ site.url }}/_images/header_bg.jpg";
 
 // Use media queries like this:
 // @include media-query($on-palm) {
