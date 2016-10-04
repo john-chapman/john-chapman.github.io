@@ -19,6 +19,7 @@ $background-color: #fdfdfd;
 $brand-color:      #2a7ae2;
 
 $grey-color:       #828282;
+$grey-color-mid:   lighten($grey-color, 30%);
 $grey-color-light: lighten($grey-color, 40%);
 $grey-color-dark:  darken($grey-color, 25%);
 
@@ -27,9 +28,6 @@ $content-width:    1024px;
 
 $on-palm:          600px;
 $on-laptop:        1024px;
-
-//$header-bg-url:        "{{ site.url }}/_images/header_bg.jpg";
-$header-bg-url:        "../images/header_bg.jpg";
 
 // Use media queries like this:
 // @include media-query($on-palm) {
