@@ -45,7 +45,7 @@ We'll return to (2) after I've presented the factory base class. For (1), we can
 {% highlight cpp %}
 Projectile* Projectile::Create(const char* _name) 
 {
-	if (strcmp(_name, "Bullet" == 0)) {
+	if (strcmp(_name, "Bullet") == 0) {
 		return new Bullet;
 	} else if (strcmp(_name, "Grenade") == 0) {
 		return new Grenade;
@@ -56,7 +56,7 @@ Projectile* Projectile::Create(const char* _name)
 
 However it would be nicer to avoid writing a new `else if` clause or other boilerplate every time we add a new projectile.
 
-_Incidentally, I prefer static `Create`/`Destroy` methods on the interface class over a separate `ProjectileFactory` class, but this is just a stylistic choice._
+_Incidentally, I prefer static `Create`/`Destroy` methods on the interface class over a separate `ProjectileFactory` class, but it's largely a cosmetic choice._
 
 ## Factory Template	 ##
 
@@ -119,17 +119,17 @@ private:
 	static Factory<_baseClass>::ClassRefDefault<_subClass> s_ ## _subClass(#_subClass)
 {% endhighlight %}
 
-Key points about this class:
+Key points:
 
 - `Factory` maintains a container, `s_registry`, which maps class names (or name hashes) to instances of `ClassRef`. 
-- `ClassRef` is metadata for the subclasses we want to instantiate (the class name and a ptr to a create function).
+- `ClassRef` is metadata for the subclasses we want to instantiate (the class name/hash and a ptr to a create function).
 - `ClassRefDefault` provides a default create function, which just calls `new`.
 - `FACTORY_` macros are for convenience (since the template declarations are so ugly) and also to allow changes to the implementation without breaking existing code (e.g. changing the type of `s_registry`).
 - Registration relies on static initialization to populate `s_registry`, hence care must be taken to avoid calling any of the methods of `Factory` during static initialization, because the initialization order [is not guaranteed](https://john-chapman.github.io/2016/09/01/static-initialization.html).
 - `Destroy` takes a pointer _reference_ so that it can set `_inst_ = nullptr`, which just helps to catch dangling ptr bugs.
 
 
-So, deriving from `Factory` we automatically get the require `Create` and `Destroy` methods which can instantiate any registered subclass by name. With this in mind, let's return to the `Projectile` example and 'factorify' it.
+So, deriving from `Factory` we automatically get the required `Create` and `Destroy` methods which can instantiate any registered subclass by name. With this in mind, let's return to the `Projectile` example and 'factorify' it.
 
 {% highlight cpp %}
 // in the .h
@@ -160,22 +160,22 @@ FACTORY_REGISTER_DEFAULT(Projectile, Grenade); // register Grenade
 
 {% endhighlight %}
 
-_Note that the definitions of `Bullet` and `Grenade` don't need to be public - if client code is written in terms of the `Projectile` interface they can be hidden away inside the .cpp. This means adding new projectiles incurs minimum recompilation._
+_Note that the definitions of `Bullet` and `Grenade` don't need to be public - if client code is written in terms of the `Projectile` interface they can be hidden away inside the .cpp. This means adding new subclasses incurs minimum recompilation._
 
 ## Listing Subclasses ##
 
-The second feature mentioned at the beginning (iterating over registered subclasses) can be easilly implemented in terms of `ClassRef`:
+The other desirable feature I mentioned at the beginning - iterating over registered subclasses - can be easilly implemented in terms of `ClassRef`:
 
 {% highlight cpp %}
 for (int i = 0; i < Projectile::GetClassRefCount(); ++i) {
 	const ClassRef* cref = Projectile::GetClassRef(i);
-	// do stuff with cref, e.g. get the name or call Projectile::Create()
+	// do stuff with cref, e.g. get the name or call Projectile::Create(cref)
 }
 {% endhighlight %}
 
 ## Conclusion ##
 
-So that's it - pretty basic stuff, but I hadn't seen an implementation exactly like this before. Of course it could be extended to add more features:
+So that's it - pretty basic stuff, but I didn't find an implementation exactly like when looking around. Of course it could be extended to add more features:
 
 - A custom `Destroy` function per subclass, although this is probably of limited use since you'll usually have virtual destructors.
 - Add a `ClassRef*` member to `Factory`; this way all subclasses have access to their class metadata which would be a simple way of doing RTTI.
