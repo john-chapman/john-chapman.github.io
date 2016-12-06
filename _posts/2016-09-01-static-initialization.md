@@ -7,7 +7,7 @@ published: true
 tags: c++, idioms, schwartz, nifty
 ---
 
-In this post we'll discuss the problem of initializating global variables with `static` storage duration, and I'll show you the best solution which C++ has to offer.
+In this post we'll discuss the problem of initializing global variables with `static` storage duration, and I'll show you the best solution which C++ has to offer.
 
 C++ makes some rather sparse guarantees about the initialization of such global variables:
 
@@ -172,7 +172,7 @@ LogInit::~LogInit() {
 
 _I've allocated `Log::s_instance` on the heap for brevity, but you can imagine other solutions e.g. using aligned storage and placement new, or calling static `Init()` and `Shutdown()` methods._
 
-As you can see, we use `s_count` to ensure that the ctor/dtor are called exactly once, on the first and last calls to `LogInit()` and `~LogInit()` respectively. Because each translation unit gets its own `LogInit` instance, whichever 'goes first' during the pre-main initialization will increment `s_count` to 1 and subsequently call the `Log` ctor. Conversely, whichever translation unit 'goes last' during the post-main deinitialzation will decrement `s_count` to 0 and call the `Log` dtor. Adding new dependencies 'just works' - we never have to worry about getting the initialization order right since the counter handles this for us. With one exception:
+As you can see, we use `s_count` to ensure that the ctor/dtor are called exactly once, on the first and last calls to `LogInit()` and `~LogInit()` respectively. Because each translation unit gets its own `LogInit` instance, whichever 'goes first' during the pre-main initialization will increment `s_count` to 1 and subsequently call the `Log` ctor. Conversely, whichever translation unit 'goes last' during the post-main deinitialization will decrement `s_count` to 0 and call the `Log` dtor. Adding new dependencies 'just works' - we never have to worry about getting the initialization order right since the counter handles this for us. With one exception:
 
 ## Initialization Dependencies ##
 

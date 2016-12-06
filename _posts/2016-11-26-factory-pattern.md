@@ -56,7 +56,7 @@ Projectile* Projectile::Create(const char* _name)
 
 However it would be nicer to avoid writing a new `else if` clause or other boilerplate every time we add a new projectile.
 
-_Incidentally, I prefer static `Create`/`Destroy` methods on the interface class over a separate `ProjectileFactory` class, but this is just a stylistic choice._
+_Incidentally, I prefer static `Create`/`Destroy` methods on the interface class over a separate `ProjectileFactory` class, if only to reduce namespace pollution._
 
 ## Factory Template	 ##
 
@@ -129,7 +129,7 @@ Key points about this class:
 - `Destroy` takes a pointer _reference_ so that it can set `_inst_ = nullptr`, which just helps to catch dangling ptr bugs.
 
 
-So, deriving from `Factory` we automatically get the require `Create` and `Destroy` methods which can instantiate any registered subclass by name. With this in mind, let's return to the `Projectile` example and 'factorify' it.
+So, deriving from `Factory` we automatically get the require `Create` and `Destroy` methods which can instantiate any registered subclass by name. With this in mind, let's return to the `Projectile` example and 'factorify' it:
 
 {% highlight cpp %}
 // in the .h
@@ -160,11 +160,11 @@ FACTORY_REGISTER_DEFAULT(Projectile, Grenade); // register Grenade
 
 {% endhighlight %}
 
-_Note that the definitions of `Bullet` and `Grenade` don't need to be public - if client code is written in terms of the `Projectile` interface they can be hidden away inside the .cpp. This means adding new projectiles incurs minimum recompilation._
+_Note that the definitions of `Bullet` and `Grenade` don't need to be public - if client code is written in terms of the `Projectile` interface they can be hidden away inside the .cpp, which incurs minimum recompilation when adding new projectile types._
 
 ## Listing Subclasses ##
 
-The second feature mentioned at the beginning (iterating over registered subclasses) can be easilly implemented in terms of `ClassRef`:
+The second feature I mentioned earlier (iterating over registered subclasses) can be easily implemented in terms of `ClassRef`:
 
 {% highlight cpp %}
 for (int i = 0; i < Projectile::GetClassRefCount(); ++i) {
