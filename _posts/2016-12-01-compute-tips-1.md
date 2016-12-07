@@ -1,11 +1,13 @@
 ---
 layout: post
-title: Compute Shader Tips 1 - Memory Access
+title: Compute Tips 1 - Memory Access
 date: 2016-12-01
 comments: true
 published: true
-tags: compute shader, memory access, cache coherency, glsl
+tags: compute shader, memory access, cache coherency, hlsl, glsl
 ---
+
+Writing concurrent programs is tricky. Writing _optimal_ concurrent programs is really tricky. Knowing the hardware of the target platform is a must.
 
 It's common to have compute shader threads perform some work on a list of items, e.g. updating a particle system, culling a light list, etc. Each group runs some number of threads, and each thread does some portion of the work. You might therefore write a loop like this:
 
@@ -22,9 +24,9 @@ Here, each thread works directly on its own subsection of the list:
 
 ![Thread-wise list partitioning](/images/list_threadwise.png)
 
-This is a textbook approach for solving 'embarrassingly parallel' problems. The memory access pattern is very suitable for code written to run on CPU cores, where typically each core (and therefore thread) gets its own L1 cache. In this case, accessing contiguous regions of memory within a thread is desirable - locality is good and avoids [false sharing](https://en.wikipedia.org/wiki/False_sharing).
+This is a textbook approach for solving 'embarrassingly parallel' problems. The memory access pattern is very suitable for code written to run on CPU cores, where typically each core (and therefore thread) gets its own L1 cache. In this case, accessing a contiguous region of memory per-thread is desirable; intra-thread memory access locality is good and inter-thread cache conflicts ([false sharing](https://en.wikipedia.org/wiki/False_sharing)) are minimized.
 
-However, this pattern is not optimal for the GPU, where each thread in a group is typically accessing memory via a shared cache. In this case it is preferable to have each thread in a group operate on the same region of memory as it's siblings:
+However, this pattern is not optimal on the GPU, where each thread in a group is typically accessing memory via a shared cache. In this case it is preferable to have each thread in a group operate on the same region of memory as it's siblings:
 
 ![Group-wise list partitioning](/images/list_groupwise.png)
 
