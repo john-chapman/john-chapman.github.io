@@ -7,7 +7,7 @@ published: true
 tags: c++, idioms, schwartz, nifty
 ---
 
-In this post we'll discuss the problem of initializing global variables with `static` storage duration, and I'll show you the best solution which C++ has to offer.
+In this post I'll discuss the problem of initializing global variables with `static` storage duration, and show you what I think is the best solution which C++ has to offer.
 
 C++ makes some rather sparse guarantees about the initialization of such global variables:
 
@@ -15,7 +15,7 @@ C++ makes some rather sparse guarantees about the initialization of such global 
 - Initialization happens either prior to the first statement of the main function, or before the first use of the variable.
 - The order of initialization is guaranteed to happen in the same order as the variable declarations appear __within a single translation unit__. Initialization order _between_ translation units is not guaranteed.
 
-In this post we're most concerned with that last one: how can we order the initialization of `static` globals to reflect dependencies in our code?
+That last point is what concerns us most: how can we order the initialization of `static` globals to reflect dependencies in our code?
 
 
 Let's begin with an example which exhibits the behaviour we're talking about. Imagine we have a `Log` singleton which opens a file during initialization and provides a method to write to that file:
@@ -93,14 +93,14 @@ One solution would be to use 'lazy' initialization. During `Log::write()` we sim
 
 {% highlight cpp %}
 void Log::write(const char* _msg) {
-	if (m_file == 0) { // m_file is guaranteed to be zero-initialized
+	if (!m_file) { // m_file is guaranteed to be zero-initialized
 		m_file = fopen("log.txt", "w"); 
 	}
 	fprintf(m_file, _msg);
 }
 {% endhighlight %}
 
-This is simple and it works. But what about deinitialization? The problem remains - it's still possible that `~Log()` will be called before `~Subsystem()`, which means that there is no sensible place to close our log file.
+This is simple and it works. But what about deinitialization? The problem remains - it's still possible that `~Log()` will be called before `~Subsystem()`, which means that there is no sensible place to close our log file. It also means we have to test `m_file` every time we write to the log, which isn't ideal.
 
 ## Solution 2: Explicit Initialization/Deinitialization ##
 
@@ -177,9 +177,9 @@ As you can see, we use `s_count` to ensure that the ctor/dtor are called exactly
 ## Initialization Dependencies ##
 
 What if `Log` depends on another singleton `FileSystem` (to create the log file), but `FileSystem` also depends on `Log` (to print an error message)? The Schwarz counter idiom can't help us here: there's no way to order the initialization of `Log` and `FileSystem` which works. 
-The only advice in this case is to avoid cyclic dependencies like this - remove any `Log->write()` calls from the `FileSystem` ctor/dtor, or vice versa, plus drop an `assert` in `GetInstance()` to check that the init happened. Hopefully these cases will be quite rare and easy to resolve by design. Note that this problem only applies to dependencies in the initialization/deinitialization.
+The only advice in this case is to avoid cyclic dependencies like this - remove any `Log::GetInstance()->write()` calls from the `FileSystem` ctor/dtor, or vice versa, plus drop an `assert` in `GetInstance()` to check that the init happened. Hopefully these cases will be quite rare and easy to resolve by design. Note that this problem only applies to dependencies in the initialization/deinitialization - everywhere else you're safe.
 
 
 ## Conclusion ##
 
-So that's the Schwarz counter - hopefully you can see why it's also called 'Nifty'. If you're writing any software with non-trivial global state (as in the examples), you should be using this idiom.
+So that's the Schwarz counter - hopefully you can see why it's also called 'Nifty'. If you're writing code with non-trivial global state (as in the examples), remember this idiom.
