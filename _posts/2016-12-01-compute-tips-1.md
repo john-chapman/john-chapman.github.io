@@ -24,7 +24,7 @@ for (uint i = beg; i < end; ++i) {
 
 Here, each thread works directly on its own subsection of the list; thread `t0` operates on items `[i0,i4]`, `t1` on items `[i5,i9]`, etc.
 
-This is a textbook approach for solving these kinds of problems. The memory access pattern is very suitable for code written to run on CPU cores, where typically each core (and therefore thread) gets its own L1 cache. In this case, accessing a contiguous region of memory per-thread is desirable; intra-thread memory access locality is good and inter-thread cache conflicts ([false sharing](https://en.wikipedia.org/wiki/False_sharing)) are minimized.
+This is the textbook approach for solving these kinds of problems. The memory access pattern is suitable for code written to run on CPU cores, where typically each core (and therefore thread) gets its own L1 data cache. In this case, accessing a contiguous region of memory per-thread is desirable; intra-thread memory access locality is good and inter-thread cache conflicts ([false sharing](https://en.wikipedia.org/wiki/False_sharing)) are minimized.
 
 However, this pattern is not optimal on the GPU, where each thread in a group is typically accessing memory via a shared cache. In this case it is preferable to have each thread operate on the same region of memory as it's siblings:
 
