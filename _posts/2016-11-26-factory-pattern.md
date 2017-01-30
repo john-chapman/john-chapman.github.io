@@ -156,7 +156,6 @@ public:
 	virtual void update() { /* grenade stuff */ }
 };
 FACTORY_REGISTER_DEFAULT(Projectile, Grenade); // register Grenade
-;
 {% endhighlight %}
 
 _Note that the definitions of `Bullet` and `Grenade` don't need to be public - if client code is written only in terms of the `Projectile` interface they can be hidden away inside the .cpp, which incurs minimum recompilation when adding new projectile types (but see the notes about static libs below)._
@@ -178,7 +177,7 @@ Using the code as I've presented it, you may run into issues when linking with a
 
 One solution to this problem is to tell the linker not to do this: use `/WHOLEARCHIVE` for MSVC or `--whole-archive` for GCC. This forces the linker to include everything: it is an all-or-nothing option, though, which can bloat the final executable (though in practice not by much).
 
-We could also exploit the fact that if _any_ code in the same translation unit as the `FACTORY_REGISTER` macros is referenced by the executable, the compiler must include the whole translation unit. In the example above this is already the case; `s_registry` is defined in the same .cpp that our `FACTORY_REGISTER` macros appear and because it is externally visible (via the `Projectile` interface) the linker has to link everything in the file. If this were not the case, for example if we defined `Bullet` and `Grenade` in a separate .cpp file, we could use a little hack to achieve the same result:
+We could also exploit the fact that if _any_ code in the same translation unit as the `FACTORY_REGISTER` macros is referenced by the executable, the linker must include the whole translation unit. In the example above this is already the case; `s_registry` is defined in the same .cpp that our `FACTORY_REGISTER` macros appear and because it is externally visible (via the `Projectile` interface) the linker has to link everything in the file. If this were not the case, for example if we defined `Bullet` and `Grenade` in a separate .cpp file, we could use a little hack to achieve the same result:
 
 {% highlight cpp %}
 // helper macros
@@ -196,13 +195,13 @@ FORCE_LINK_REF(Projectile);
 FORCE_LINK(Projectile);
 {% endhighlight %}
 
-This declares an `int` in the translation unit we want to force-link, and references it from a function in the executable. Note that it's not necessary to actually call the function defined by `FORCE_LINK`. This is quite ugly but is the most portable solution. 
+This is ugly, but is the most portable solution. The `FORCE_LINK_REF` macro declares an `int` in the translation unit we want to force-link and references it from a function in the executable, defined via the `FORCE_LINK` macro. Note that it's not necessary to actually call the function, simply defining it does the trick.
 
 ## Initialization Order ##
 
 Another problem arises in that initialization order of `s_registry` and the static `ClassRef` instances (which add themselves to the registry) are not guaranteed. Depending on the choice of container for `s_registry` this may break the whole system - if `ClassRef` instances register themselves before `s_registry` is initialized it may either crash, or overwrite some or all of the registered pointers when the container is initialized. Bad bad bad.
 
-Fortunately the solution is simple - by amending the code in the `ClassRef` ctor we can initialize the container on demand:
+Fortunately the solution is simple - by amending the code in the `ClassRef` ctor we can init the container on demand:
 
 {% highlight cpp %}
 ClassRef(const char* _name, CreateFunc* _create)
