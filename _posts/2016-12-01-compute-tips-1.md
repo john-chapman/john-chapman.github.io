@@ -35,7 +35,7 @@ Here, threads `[t0,t4]` operate on items `[i0,i4]` simultaneously, then on items
 This means dividing the work into blocks of `THREAD_COUNT` items. If the list is not exactly divisible by `THREAD_COUNT` this means that some threads will be redundant, but branching in the shader can manage that:
 
 {% highlight glsl %}
-const uint stepCount = (ITEM_COUNT + THREAD_COUNT - 1) / THREAD_COUNT; // ceil(ITEM_COUNT/THREAD_COUNT)
+const uint stepCount = (ITEM_COUNT + THREAD_COUNT - 1) / THREAD_COUNT; // floor(ITEM_COUNT/THREAD_COUNT)
 for (uint step = 0; step < stepCount; ++step) {
 	const uint i = step * THREAD_COUNT + THREAD_INDEX;
 	if (i >= ITEM_COUNT) {
