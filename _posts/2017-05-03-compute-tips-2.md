@@ -14,7 +14,7 @@ There is, however, an important 'gotcha' which recently caught me out: how to co
 It seems like a trivial thing to do; I started by writing the following line of code:
 
 {% highlight glsl %}
-float uv = vec2(THREAD_ID) / vec2(TEXTURE_SIZE - 1);
+vec2 uv = vec2(THREAD_ID) / vec2(TEXTURE_SIZE - 1);
 {% endhighlight %}
 
 Here the UV in [0,1] will cover the range [0, TEXTURE_SIZE - 1]. It looks like this:
@@ -30,7 +30,7 @@ What we really want is for it to look like this:
 Here, UV (0,0) and (1,1) fall on texel _edges_. We can achieve this mapping by dropping the `-1` from the code above and adding half a texel:
 
 {% highlight glsl %}
-float uv = vec2(THREAD_ID) / vec2(TEXTURE_SIZE) + 0.5 / vec2(TEXTURE_SIZE);
+vec2 uv = vec2(THREAD_ID) / vec2(TEXTURE_SIZE) + 0.5 / vec2(TEXTURE_SIZE);
 {% endhighlight %}
 
 There may be some cases where you want the previous behavior, for example when sampling a function at regular intervals. Just be aware of the difference between the two mappings.
