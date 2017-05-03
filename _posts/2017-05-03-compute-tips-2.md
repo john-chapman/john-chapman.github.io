@@ -17,7 +17,7 @@ It seems like a trivial thing to do; I started by writing the following line of 
 vec2 uv = vec2(THREAD_ID) / vec2(TEXTURE_SIZE - 1);
 {% endhighlight %}
 
-Here the UV in [0,1] will cover the range [0, TEXTURE_SIZE - 1]. It looks like this:
+Here the UV in `[0,1]` will cover the range `[0, TEXTURE_SIZE - 1]`. It looks like this:
 
 ![Incorrect Thread ID to UV mapping](/images/uvmap_wrong.png)
 
