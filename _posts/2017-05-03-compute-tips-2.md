@@ -7,7 +7,7 @@ published: true
 tags: compute shader, fragment shader, thread id, uv, hlsl, glsl
 ---
 
-Writing a compute shader to replace a 'classical' fragment shader + full screen quad can be a performance win in some cases, not to mention the fact that it's much easier to set up (no vertex shader or geometry to load). 
+Writing a compute shader to replace a 'classical' fragment shader + full screen quad can be a performance win in some cases, not to mention the fact that it's much easier to set up (no vertex shader or geometry). 
 
 There is, however, an important 'gotcha' which recently caught me out: how to correctly convert a thread ID to UV coordinates?
 
@@ -33,5 +33,4 @@ Here, UV (0,0) and (1,1) fall on texel _edges_. We can achieve this mapping by d
 vec2 uv = vec2(THREAD_ID.xy) / vec2(TEXTURE_SIZE.xy) + 0.5 / vec2(TEXTURE_SIZE.xy);
 {% endhighlight %}
 
-There may be some cases where you want the previous behavior, for example when sampling a function at regular intervals. Just be aware of the difference between the two mappings.
-
+This is almost always what you want when writing to a texture from compute, assuming that the aim is to resample the output of the compute shader using texture filtering.
