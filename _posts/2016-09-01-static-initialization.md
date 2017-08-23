@@ -89,7 +89,7 @@ Obviously this relies on `Log::s_instance` being initialized **before** `Subsyst
 _With Visual Studio I was able to get this code to fail consistently by ensuring that the `Subsystem` files appeared before the `Log` files inside the .vcxproj._
 
 ## Solution 1: Lazy Initialization ##
-One solution would be to use 'lazy' initialization. During `Log::write()` we simply check if the file was created and create it if it wasn't:
+One solution is to use lazy initialization. During `Log::write()` we simply check if the file was created, and create it if it wasn't:
 
 {% highlight cpp %}
 void Log::write(const char* _msg) {
@@ -145,7 +145,7 @@ struct LogInit {
 static LogInit s_logInit;
 {% endhighlight %}
 
-This means that every translation unit which includes `Log.h` will get it's own static instance of `LogInit` and, therefore, `LogInit()` and `~LogInit()` will be called once for each translation unit. The initialization order is controlled by the counter `static int s_count`:
+This means that every translation unit which includes `Log.h` will get it's own static instance of `LogInit` and, therefore, `LogInit()` and `~LogInit()` will be called once for each translation unit. The initialization order is controlled by the counter `s_count`:
 
 {% highlight cpp %}
 // Log.cpp
@@ -177,9 +177,7 @@ As you can see, we use `s_count` to ensure that the ctor/dtor are called exactly
 ## Initialization Dependencies ##
 
 What if `Log` depends on another singleton `FileSystem` (to create the log file), but `FileSystem` also depends on `Log` (to print an error message)? The Schwarz counter idiom can't help us here: there's no way to order the initialization of `Log` and `FileSystem` which works. 
-The only advice in this case is to avoid cyclic dependencies like this - remove any `Log::GetInstance()->write()` calls from the `FileSystem` ctor/dtor, or vice versa, plus drop an `assert` in `GetInstance()` to check that the init happened. Hopefully these cases will be quite rare and easy to resolve by design. Note that this problem only applies to dependencies in the initialization/deinitialization - everywhere else you're safe.
+The only advice in this case is to avoid cyclic dependencies like this - remove any `Log::GetInstance()->write()` calls from the `FileSystem` ctor/dtor, or vice versa. Dropping an `assert` in `GetInstance()` to check that the init happened is also useful. Hopefully these cases will be quite rare and easy to resolve by design. Note that this problem only applies to dependencies in the initialization/deinitialization - everywhere else is safe.
 
 
-## Conclusion ##
-
-So that's the Schwarz counter - hopefully you can see why it's also called 'Nifty'. If you're writing code with non-trivial global state (as in the examples), remember this idiom.
+So that's the Schwarz counter - hopefully you can see why it's also called 'Nifty'.

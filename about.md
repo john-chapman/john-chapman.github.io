@@ -4,6 +4,8 @@ title: About
 permalink: /about/
 ---
 
-John Chapman is a computer graphics programmer who writes about himself in the third person. 
+Programmer, graphics programmer, `goto` enthusiast.
 
-He is also sometimes a painter.
+I've been in love with programming for nearly 20 years now (!), and with graphics and games programming for most of that.
+
+Currently working at [Pastagames](http://www.pastagames.com/)/[Wild Sheep Studio](http://www.wildsheepstudio.com/).

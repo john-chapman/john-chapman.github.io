@@ -32,5 +32,3 @@ Here, UV (0,0) and (1,1) fall on texel _edges_. We can achieve this mapping by d
 {% highlight glsl %}
 vec2 uv = vec2(THREAD_ID.xy) / vec2(TEXTURE_SIZE.xy) + 0.5 / vec2(TEXTURE_SIZE.xy);
 {% endhighlight %}
-
-This is almost always what you want when writing to a texture from compute, assuming that the aim is to resample the output of the compute shader using texture filtering.

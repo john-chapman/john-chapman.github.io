@@ -9,10 +9,10 @@
 title: Non-Power-of-Two
 email: j.x.chapman@gmail.com
 description: > # this means to ignore newlines until "baseurl:"
-  Software development, interactive graphics, etc.
+  Programming, graphics, etc.
 baseurl: "" # the subpath of your site, e.g. /blog
 url: "http://john-chapman.github.io" # the base hostname & protocol for your site
 github_username: john-chapman
-
+twitter_username: _JohnChapman
 # Build settings
 markdown: kramdown
