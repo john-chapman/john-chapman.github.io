@@ -6,6 +6,6 @@ permalink: /about/
 
 Programmer, graphics programmer, `goto` enthusiast.
 
-I've been in love with programming for nearly 20 years now (!), and with graphics and games programming for most of that.
+I've been into programming for nearly 20 years now (!), and into games/graphics programming for most of that.
 
-Currently working at [Pastagames](http://www.pastagames.com/)/[Wild Sheep Studio](http://www.wildsheepstudio.com/).
+Currently working (mainly on graphics stuff) at [Pastagames](http://www.pastagames.com/)/[Wild Sheep Studio](http://www.wildsheepstudio.com/).
