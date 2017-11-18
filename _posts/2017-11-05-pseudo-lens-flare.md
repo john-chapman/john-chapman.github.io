@@ -13,9 +13,9 @@ This post will be a slightly more up-to-date and terse overview of the technique
 
 ## Lens Flare ##
 
-Lens flare is a photographic artefact caused by unintended reflections within a lens system (3). As with other photographic artefacts, it is desirable to emulate in games or CGI in order to create a 'cinematic' effect, enhancing realism by introducing the flaws found in real-world cameras. Along with other effects like bloom, lens flare can also increase perceived brightness, which is useful given the relatively low dynamic range of display devices.
+Lens flare is a photographic artefact caused by unintended reflections within a lens system (3). As with other photographic artefacts, it is desirable to emulate in games or CGI in order to create a 'cinematic' effect, enhancing realism by introducing the flaws found in real-world cameras. Along with other effects such as bloom, lens flares can also increase perceived brightness, which is useful given the relatively low dynamic range of display devices.
 
-The 'traditional' approach to simualting lens flares is to draw sprites along a path through the image center, using some occlusion data to decide how bright the overall effect is:
+The 'traditional' approach to simualting lens flares is to draw sprites along a path from the light source through the image center, using some occlusion data to decide how bright the overall effect is:
 
 \IMAGE Sprite-based lens flare (gif, with occlusion).
 
@@ -30,7 +30,7 @@ The screen space technique comprises the following 4 steps:
 
 ## Downsample ##
 
-This is very straightforward so I won't describe it in detail. Very likely you'll have already generated a downsampled version of the scene image as an input to other post processing effects (bloom, depth of field) which can be reused. Choosing the downsampled size is a tradeoff: smaller render targets make the feature generation and blur steps cheaper, however you may need more blur to hide blocky artefacts if the resolution is too low. A nice middle ground might be to use a bicubic filter during the downsampling to provide a smoother input to the feature generation step. \TODO TRY THIS
+This is very straightforward so I won't describe it in detail. Very likely you'll have already generated a downsampled version of the scene image as an input to other post processing effects (bloom, screen space reflections) which can be reused. Choosing the downsampled size is a tradeoff: smaller render targets make the feature generation and blur steps cheaper, however you may need more blur to hide blocky artefacts if the resolution is too low. A nice middle ground might be to use a small Gaussian blur to replace the box filter during the downsampling.
 
 ## Feature Generation ##
 
@@ -44,7 +44,7 @@ Here we read the downsampled scene image in order to generate lens the flare 'fe
 
 The number of samples and sample spacing can be exposed as artist-settable parameters.
 
-// \TODO mirror the UVs? Or just flip the direction of the sampling vector?
+// \TODO mirror the UVs? Or just flip the direction of the sampling vector? YES seems to be required.
 
 {% highlight glsl %}
 vec2 uv = vec2(1.0) - vUv; // flip the texture coordinates
