@@ -7,15 +7,15 @@ published: true
 tags: screen space, lens flare, shader, effect, glsl
 ---
 
-A few years ago I wrote a [blog post](http://john-chapman-graphics.blogspot.fr/2013/02/pseudo-lens-flare.html) describing a screen space post process for rendering lens flares. I had first read about this idea on Matt Pettineo's blog (1), but the basic technique dates back to a GDC2003 presentation given by Masaki Kawase (2). I mention this because I've seen the technique credited directly to me in a few places online; I didn't invent the idea, but in my original post I did described a few enhancements to improve the quality of the effect.
+A few years ago I wrote a [blog post](http://john-chapman-graphics.blogspot.fr/2013/02/pseudo-lens-flare.html) describing a screen space process for rendering lens flares. I had first read about this idea on Matt Pettineo's blog (1), but the basic technique dates back to a GDC2003 presentation given by Masaki Kawase (2). 
 
-This post will be a slightly more up-to-date and terse overview of the technique along with a couple of improvements to the compositing step. There is a sample implementation where you can refer to the final shader code \LINK.
+This post will be a more up-to-date and terse overview of the technique along with a couple of improvements to the compositing step. There is a sample implementation where you can refer to the final shader code \LINK.
 
 ## Lens Flare ##
 
-Lens flare is a photographic artefact caused by unintended reflections within a lens system (3). As with other photographic artefacts, it is desirable to emulate in games or CGI in order to create a 'cinematic' effect, enhancing realism by introducing the flaws found in real-world cameras. Along with other effects such as bloom, lens flares can also increase perceived brightness, which is useful given the relatively low dynamic range of display devices.
+Lens flare is a photographic artefact caused by unintended reflections within the lens system (3). As with other photographic artefacts, it is desirable to emulate in games or CGI in order to create a 'cinematic' effect, enhancing realism by introducing the flaws found in real-world cameras. Along with other effects such as bloom, lens flares also increases perceived brightness, which is useful given the relatively low dynamic range of display devices.
 
-The 'traditional' approach to simualting lens flares is to draw sprites along a path from the light source through the image center, using some occlusion data to decide how bright the overall effect is:
+The 'traditional' approach to simulating lens flares is to draw sprites along a path from the light source through the image center, using some occlusion data at the light source to decide how bright the overall effect is:
 
 \IMAGE Sprite-based lens flare (gif, with occlusion).
 
@@ -30,11 +30,11 @@ The screen space technique comprises the following 4 steps:
 
 ## Downsample ##
 
-This is very straightforward so I won't describe it in detail. Very likely you'll have already generated a downsampled version of the scene image as an input to other post processing effects (bloom, screen space reflections) which can be reused. Choosing the downsampled size is a tradeoff: smaller render targets make the feature generation and blur steps cheaper, however you may need more blur to hide blocky artefacts if the resolution is too low. A nice middle ground might be to use a small Gaussian blur to replace the box filter during the downsampling.
+This is very straightforward so I won't describe it in detail. Very likely you'll have already generated a downsampled version of the scene image as an input to other post processing effects (e.g. bloom) which can be reused. Choosing the downsampled size is a tradeoff: smaller render targets make the feature generation and blur steps cheaper, however you may need more blur to hide blocky artefacts if the resolution is too low. A nice middle ground might be to use a small Gaussian blur instead of a box filter during the downsampling.
 
 ## Feature Generation ##
 
-Here we read the downsampled scene image in order to generate lens the flare 'features'. Bright areas in the source image should project to other areas of the image along a path through the image center. In a real flare, the shapes of the features are determined by a combination of the lens and aperture geometry. This is easier to simulate with sprite-based lens flare, but for the screen space technique we have to sample the source image in novel ways to try and emulate it.
+Here we read the downsampled scene image in order to generate lens the flare 'features'. Bright areas in the source image should project to other parts of the image along a path through the image center. In a real flare, the shapes of the features are determined by a combination of the lens and aperture geometry. This is easier to emulate with a sprite-based lens flare, but for the screen space technique we are restricted to sampling the source image in novel ways.
 
 ### Ghosts ###
 
@@ -42,9 +42,7 @@ Here we read the downsampled scene image in order to generate lens the flare 'fe
 
 \IMAGE Ghosts + sampling vectors.
 
-The number of samples and sample spacing can be exposed as artist-settable parameters.
-
-// \TODO mirror the UVs? Or just flip the direction of the sampling vector? YES seems to be required.
+The number of samples and sample spacing can be exposed as external controls.
 
 {% highlight glsl %}
 vec2 uv = vec2(1.0) - vUv; // flip the texture coordinates
@@ -52,13 +50,10 @@ vec3 ret = vec3(0.0);
 vec2 ghostVec = (vec2(0.5) - uv) * uGhostSpacing;
 for (int i = 0; i < uGhostCount; ++i) {
 	vec2 suv = fract(uv + ghostVec * vec2(i));
-
-	float d = length(vec2(0.5) - suv) / length(vec2(0.5));
+	float d = distance(suv, vec2(0.5));
 	float weight = 1.0 - smoothstep(0.0, 0.75, d); // reduce contributions from samples at the screen edge
-
 	vec3 s = SampleSceneColor(suv);
 	s = ApplyThreshold(s, uGhostThreshold);
-
 	ret += s * weight;
 }
 {% endhighlight %}
@@ -72,7 +67,7 @@ vec3 ApplyThreshold(in vec3 _rgb, in float _threshold)
 }
 {% endhighlight %}
 
-The samples are weighted to fade out ghosts for bright spots near the edge of the source image. \TODO incorporate this into the color gradient alpha.
+The samples are weighted to fade out ghosts for bright spots near the edge of the source image. 
 
 We can also modulate the color of the samples according to a texture gradient, sampled based on the distance to the image center (`d` in the code above). This can be applied globally or per-sample, the latter providing better results:
 
@@ -80,7 +75,7 @@ We can also modulate the color of the samples according to a texture gradient, s
 
 ### Halos ###
 
-A different effect can be achieved by taking a vector to the centre of the image (as for the ghost sampling) but fixing the vector length. In this case the source image is warped:
+A different effect can be achieved by taking a vector to the center of the image (as for the ghost sampling) but fixing the vector length. In this case the source image is warped:
 
 \IMAGE: Warped image.
 
@@ -88,16 +83,19 @@ We can use this to produce a 'halo' feature, weighting the samples to restrict t
 
 \IMAGE: Halo weight * warped image = halo.
 
-By default the aspect ratio will match that of the scene image, however it is possible to correct for this in order to achieve a more circular halo:
+By default the aspect ratio will match that of the scene image, however it is possible to correct for this in order to achieve a more (or less) circular halo:
 
 {% highlight glsl %}
 vec2 haloVec = vec2(0.5) - _uv;
+
+\TODO add thickness to weight, expose thickness in the sample
 
 // aspect ratio correction
 haloVec.x /= uAspectRatio;
 haloVec = normalize(haloVec);
 haloVec.x *= uAspectRatio;
-float haloWeight = GetUvDistanceToCenter((_uv - vec2(0.5, 0.0)) / vec2(uAspectRatio, 1.0) + vec2(0.5, 0.0));
+vec2 wuv = (_uv - vec2(0.5, 0.0)) / vec2(uAspectRatio, 1.0) + vec2(0.5, 0.0);
+float haloWeight = distance(wuv, vec2(0.5));
 haloVec *= uHaloRadius;
 {% endhighlight %}
 
@@ -105,7 +103,11 @@ haloVec *= uHaloRadius;
 
 ### Chromatic Aberration ###
 
-Cheaper to do at the feature stage (ultimately use fewer samples).
+Chromatic aberration is another optical artefact, caused by varying indices of refraction for different wavelengths of light. We can emulate this by sampling red, green and blue channels at different offsets:
+
+\IMAGE: With/without chromatic aberration.
+
+While this could be applied during the upsample/composite step, fewer texture fetches are incurred by doing it as part of the feature generation step (depending on the downsample size and number of features).
 
 ## Blur ##
 
@@ -117,7 +119,7 @@ Aside from the blocky artefacts from the downsampling, there's also the problem 
 
 \IMAGE: Features with blur
 
-It is possible to reduce the blur quality to improve performance, depending on how the lens flare is applied to the final image.
+The sample uses a basic separable Gaussian blur, but there are numerous alternatives. Note that it is possible to trade blur quality for performance, depending on how the lens flare is applied to the final image.
 
 ## Upsample/Composite ##
 
@@ -129,7 +131,7 @@ Used heavily in the Battlefield games, this is basically modulating the result b
 
 \IMAGE: Lens dirt mask * features =
 
-An improvement on the static mask would be to dynamically generate it, for example simulating rain splashes or dust on the camera lens.
+An improvement on the static mask would be to dynamically generate it, for example simulating rain drops or dust on the camera lens.
 
 ### Starburst ###
 
