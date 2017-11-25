@@ -87,15 +87,12 @@ By default the aspect ratio will match that of the scene image, however it is po
 
 {% highlight glsl %}
 vec2 haloVec = vec2(0.5) - _uv;
-
-\TODO add thickness to weight, expose thickness in the sample
-
-// aspect ratio correction
 haloVec.x /= uAspectRatio;
 haloVec = normalize(haloVec);
 haloVec.x *= uAspectRatio;
 vec2 wuv = (_uv - vec2(0.5, 0.0)) / vec2(uAspectRatio, 1.0) + vec2(0.5, 0.0);
-float haloWeight = distance(wuv, vec2(0.5));
+float d = distance(wuv, vec2(0.5));
+float haloWeight = Window_Cubic(d, uHaloRadius, uHaloThickness); // cubic window function
 haloVec *= uHaloRadius;
 {% endhighlight %}
 
@@ -103,7 +100,7 @@ haloVec *= uHaloRadius;
 
 ### Chromatic Aberration ###
 
-Chromatic aberration is another optical artefact, caused by varying indices of refraction for different wavelengths of light. We can emulate this by sampling red, green and blue channels at different offsets:
+Chromatic aberration is another optical artefact, caused by varying indices of refraction for different wavelengths of light within the lens. We can emulate this by sampling red, green and blue channels at different offsets:
 
 \IMAGE: With/without chromatic aberration.
 
@@ -119,19 +116,19 @@ Aside from the blocky artefacts from the downsampling, there's also the problem 
 
 \IMAGE: Features with blur
 
-The sample uses a basic separable Gaussian blur, but there are numerous alternatives. Note that it is possible to trade blur quality for performance, depending on how the lens flare is applied to the final image.
+The sample uses a basic separable Gaussian blur, but there are numerous alternatives. Note that it is possible to trade blur quality for performance, depending on how the lens flare is applied to the final image (more subtle = less blur).
 
 ## Upsample/Composite ##
 
-At this point we could simply upsample the blurred features and additively blend them with the source image, however it is possible to enhance the detail of the effect working at full resolution. \TODO QUINTIC/BICUBIC FILTER?
+At this point we could simply upsample the blurred features and additively blend them with the source image, however since this step is at full resolution we can take the opportunity to add some detail to the effect.
 
 ### Lens Dirt ###
 
-Used heavily in the Battlefield games, this is basically modulating the result by a static texture containing dust/scratches:
+[Used heavily in the Battlefield games](http://i.imgur.com/F5OX6.jpg), this is basically modulating the result by a static texture containing dust/scratches:
 
 \IMAGE: Lens dirt mask * features =
 
-An improvement on the static mask would be to dynamically generate it, for example simulating rain drops or dust on the camera lens.
+An improvement on the static mask would be to dynamically generate it, for example simulating rain drops or dust splashes on the camera lens.
 
 ### Starburst ###
 
@@ -151,14 +148,16 @@ float mask =
 	  texture(txStarburst, vec2(radial + uStarburstOffset * 1.0, 0.0)).r
 	* texture(txStarburst, vec2(radial - uStarburstOffset * 0.5, 0.0)).r // rotate in the opposite direction at a different rate
 	;
-mask = saturate(mask + (1.0 - smoothstep(0.0, 0.3, d)));
+mask = saturate(mask + (1.0 - smoothstep(0.0, 0.3, d))); // fade the starburst towwards the center
 {% endhighlight %}
 
 `uStarburstOffset` should change continuously as the camera is rotating, e.g. by summing the components of the view vector.
 
 ## Conclusion ##
 
-While this isn't a particularly sophisticated technique, it is very simple to implement and can produce nice results if applied judiciously.
+\IMAGE: Some beauty shots of the final effect.
+
+While this isn't a particularly sophisticated technique, it is very simple to implement and can produce nice results if applied *very* judiciously. Personally I'd avoid it and rely on bloom/glare to handle perceptual brightness, then perhaps use a sprite-based approach to add 'hero' lens flares (e.g. for the sun) - I'll cover this in a future post.
 
 ## References ##
 
