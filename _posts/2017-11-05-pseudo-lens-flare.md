@@ -164,3 +164,5 @@ While this isn't a particularly sophisticated technique, it is very simple to im
 1. [More Post-Processing Tricks: Lens Flare](https://mynameismjp.wordpress.com/2009/12/15/more-post-processing-tricks-lens-flare/) (Matt Pettineo)
 2. Frame Buffer Post Processing Effects in DOUBLE S.T.E.A.L (Masaki Kawase)
 3. [Physically-Based Real-Time Lens Flare Rendering](http://resources.mpi-inf.mpg.de/lensflareRendering/pdf/flare.pdf) (Matthias Hullin, et al.)
+
+*The environment maps used in the screenshots are from the [sIBL Archive](http://www.hdrlabs.com/sibl/archive.html).*
