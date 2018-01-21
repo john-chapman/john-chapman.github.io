@@ -38,7 +38,7 @@ Lavg = Lavg + (Lnew - Lavg) * (1.0 - exp(uDeltaTime * -uRate));
 
 Due it's global nature, this approach suffers from areas of the image being under- or over-exposed, where there is deviation from the average luminance:
 
-![Under/over exposure](/images/under_over_exposure.jpg)
+![Under/over exposure](/images/dynamic-local-exposure/under_over_exposure.jpg)
 
 While this matches the eye's ability to adapt to changing light levels, the overall effect is quite far from what we can actually perceive in the real world.
 
@@ -54,21 +54,21 @@ float Lavg = exp(textureLod(txLuminance, uv, uLuminanceLod).x;
 
 In theory this is a great idea: each area of the image can be well-exposed while still preserving contrast between adjacent areas. In practice, though, you get a hideous mess:
 
-![Local exposure halos](/images/exposure_halos.jpg)
+![Local exposure halos](/images/dynamic-local-exposure/exposure_halos.jpg)
 
 Most objectionable are the blocky 'halos' which occur in regions of high contrast:
 
-![Local exposure halos closeup](/images/exposure_halos_close.jpg)
+![Local exposure halos closeup](/images/dynamic-local-exposure/exposure_halos_close.jpg)
 
 However these can be softened, either by prefiltering the luminance buffer or simply via bicubic sampling:
 
-![Local exposure halos softened](/images/exposure_halos_soft.jpg)
+![Local exposure halos softened](/images/dynamic-local-exposure/exposure_halos_soft.jpg)
 
 Still hideous, but less pixelated.
 
 Sampling different levels of the luminance mipmap controls the halo radius. This is a useful parameter to control the overall 'look' of the result, as well as minimize the halo effect, albeit at the cost of either reducing the overall contrast (it becomes an edge filter) or losing the locality of the exposure control:
 
-![Local exposure halo size](/images/exposure_halos_size.gif)
+![Local exposure halo size](/images/dynamic-local-exposure/exposure_halos_size.gif)
 
 Softening the halos isn't enough, though. The result is not at all natural; it's the extreme 'HDR photo' style rather than human vision. However by blending between the global and local value, we can have the best of both worlds:
 
@@ -79,11 +79,11 @@ float L       = mix(Lglobal, Llocal, uLocalExposureRatio);
 // .. use L to compute the final exposure scale as before
 {% endhighlight %}
 
-![Local exposure blend](/images/exposure_blend.jpg)
+![Local exposure blend](/images/dynamic-local-exposure/exposure_blend.jpg)
 
 By modifying the blend ratio, the local exposure can be tuned to minimize artefacts and maximize the perceptual realism of the result:
 
-![Local exposure blend ratio](/images/exposure_blend_ratio.gif)
+![Local exposure blend ratio](/images/dynamic-local-exposure/exposure_blend_ratio.gif)
 
 ## Automated Blend Ratio ##
 
@@ -91,19 +91,19 @@ Tuning the blend ratio by hand is ok for situations with absolute control over t
 
 In the image below we have a wide dynamic range; mainly mid-to-low luminance values with a few very high intensity regions (the sky through the windows):
 
-![Indoor scene without local exposure](/images/indoor_nolocal.jpg)
+![Indoor scene without local exposure](/images/dynamic-local-exposure/indoor_nolocal.jpg)
 
 Without local exposure, the sky color is lost. In this case we'd like the blend ratio to be high:
 
-![Indoor scene with local exposure](/images/indoor_local.jpg)
+![Indoor scene with local exposure](/images/dynamic-local-exposure/indoor_local.jpg)
 
 Now consider the image below, which contains a narrower dynamic range with mainly high luminance:
 
-![Outdoor scene without local exposure](/images/outdoor_nolocal.jpg)
+![Outdoor scene without local exposure](/images/dynamic-local-exposure/outdoor_nolocal.jpg)
 
 In this case, applying local exposure tends to squash the bright areas too much:
 
-![Outdoor scene with local exposure](/images/outdoor_local.jpg)
+![Outdoor scene with local exposure](/images/dynamic-local-exposure/outdoor_local.jpg)
 
 These observations hint at a simple heuristic for automating the local/global blend: as the difference between the average and maximum scene luminance increases, so the local exposure blend ratio should increase. Generating the maximum scene luminance can be done trivially during luminance metering, applying hysteresis to smooth the result in the same way as for the average. We can then extend the previous code snippet as follows:
 

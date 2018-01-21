@@ -20,7 +20,7 @@ for (uint i = beg; i < end; ++i) {
 }
 {% endhighlight %}
 
-![Thread-wise list partitioning](/images/list_threadwise.png)
+![Thread-wise list partitioning](/images/compute-tips-1/list_threadwise.png)
 
 Here, each thread works directly on its own subsection of the list; thread `t0` operates on items `[i0,i4]`, `t1` on items `[i5,i9]`, etc.
 
@@ -28,7 +28,7 @@ This is the typical approach used for solving these kinds of problems. The memor
 
 However, this pattern is not optimal on the GPU, where each thread in a group is typically accessing memory via a shared cache. In this case it is better to have each thread operate on the same region of memory as it's siblings:
 
-![Group-wise list partitioning](/images/list_groupwise.png)
+![Group-wise list partitioning](/images/compute-tips-1/list_groupwise.png)
 
 Here, threads `[t0,t4]` operate on items `[i0,i4]` simultaneously, then on items `[i5,i9]` and so on.
 

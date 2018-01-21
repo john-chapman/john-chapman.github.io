@@ -19,13 +19,13 @@ vec2 uv = vec2(THREAD_ID.xy) / vec2(TEXTURE_SIZE.xy - 1);
 
 Here the UV in `[0,1]` will cover the range `[0, TEXTURE_SIZE - 1]`. It looks like this:
 
-![Incorrect Thread ID to UV mapping](/images/uvmap_wrong.png)
+![Incorrect Thread ID to UV mapping](/images/compute-tips-2/uvmap_wrong.png)
 
 The grid cells represent texels, with one compute shader thread (blue dot) per texel. Notice that with this mapping UV (0,0) and (1,1) fall on texel centers. This is **not** equivalent to drawing a fullscreen quad with a fragment shader!
 
 What we really want is for it to look like this:
 
-![Correct Thread ID to UV mapping](/images/uvmap_right.png)
+![Correct Thread ID to UV mapping](/images/compute-tips-2/uvmap_right.png)
 
 Here, UV (0,0) and (1,1) fall on texel _edges_. We can achieve this mapping by dropping the `-1` from the code above and adding half a texel:
 
