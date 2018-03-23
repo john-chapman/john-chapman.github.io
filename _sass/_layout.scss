@@ -2,7 +2,7 @@
  * Site header
  */
 .site-header {
-	background-color: #000000;
+	background-color: #202623;
     border-top: 5px solid $grey-color-dark;
     border-bottom: 1px solid $grey-color-light;
     min-height: 56px;
@@ -12,7 +12,7 @@
 }
 
 .site-title {
-	color: $grey-color-mid;
+	color: $background-color;
     font-size: 26px;
     font-weight: 300;
     line-height: 56px;
@@ -21,7 +21,7 @@
     float: left;
     &,
     &:visited {
-        color: $grey-color-mid;
+        color: $background-color;
     }
 }
 
@@ -99,7 +99,7 @@
  * Site footer
  */
 .site-footer {
-    border-top: 1px solid $grey-color-light;
+    border-top: 1px solid $grey-color;
     padding: $spacing-unit 0;
 }
 
