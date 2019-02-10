@@ -15,7 +15,8 @@ It's common to have compute shader threads perform some work on a list of items,
 const uint count = ITEM_COUNT / THREAD_COUNT;
 const uint beg = THREAD_INDEX * count;
 const uint end = beg + count;
-for (uint i = beg; i < end; ++i) {
+for (uint i = beg; i < end; ++i) 
+{
 	// process item[i]
 }
 {% endhighlight %}
@@ -36,9 +37,11 @@ This means dividing the work into blocks of `THREAD_COUNT` items. If the list is
 
 {% highlight glsl %}
 const uint stepCount = (ITEM_COUNT + THREAD_COUNT - 1) / THREAD_COUNT; // ceil(ITEM_COUNT/THREAD_COUNT)
-for (uint step = 0; step < stepCount; ++step) {
+for (uint step = 0; step < stepCount; ++step) 
+{
 	const uint i = step * THREAD_COUNT + THREAD_INDEX;
-	if (i >= ITEM_COUNT) {
+	if (i >= ITEM_COUNT) 
+	{
 		break; // thread is redundant
 	}
 	// process item[i]

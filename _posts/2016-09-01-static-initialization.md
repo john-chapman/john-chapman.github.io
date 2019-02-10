@@ -24,7 +24,8 @@ Let's begin with an example which exhibits the behaviour we're talking about. Im
 // Log.h
 #include <cstdio>
 
-class Log {
+class Log 
+{
 	static Log s_instance;
 	FILE* m_file;
 	
@@ -42,15 +43,18 @@ public:
 
 Log Log::s_instance;
 
-void Log::write(const char* _msg) {
+void Log::write(const char* _msg) 
+{
 	fprintf(m_file, _msg);
 }
 
-Log::Log() {
+Log::Log() 
+{
 	m_file = fopen("log.txt", "w");
 }
 
-Log::~Log() {
+Log::~Log() 
+{
 	fclose(m_file);
 }
 {% endhighlight %}
@@ -61,7 +65,8 @@ Now let's imagine another singleton (imaginatively named `Subsystem`) which atte
 
 {% highlight cpp %}
 // Subsystem.h
-class Subsystem {
+class Subsystem 
+{
 	static Subsystem s_instance;
 
 	Subsystem();
@@ -75,11 +80,13 @@ class Subsystem {
 
 Subsystem Subsystem::s_instance;
 
-Subsystem::Subsystem() {
+Subsystem::Subsystem() 
+{
 	Log::GetInstance()->write("Subsystem Initialized!");
 }
 
-Subsystem::~Subsystem() {
+Subsystem::~Subsystem() 
+{
 	Log::GetInstance()->write("Subsystem Deinitialized!");
 }
 {% endhighlight %}
@@ -92,8 +99,10 @@ _With Visual Studio I was able to get this code to fail consistently by ensuring
 One solution is to use lazy initialization. During `Log::write()` we simply check if the file was created, and create it if it wasn't:
 
 {% highlight cpp %}
-void Log::write(const char* _msg) {
-	if (!m_file) { // m_file is guaranteed to be zero-initialized
+void Log::write(const char* _msg) 
+{
+	if (!m_file) 
+	{ // m_file is guaranteed to be zero-initialized
 		m_file = fopen("log.txt", "w"); 
 	}
 	fprintf(m_file, _msg);
@@ -110,7 +119,8 @@ Another idea might be to provide explicit `Init()` and `Shutdown()` methods for 
 #include "Log.h"
 #include "Subsystem.h"
 
-int main(int, char**) {
+int main(int, char**) 
+{
 	Log::Init();            // create the log file first
 	Subsystem::Init();
 	
@@ -130,14 +140,16 @@ And so at last we come to the 'Schwarz' or 'Nifty' counter. The idea is simple: 
 {% highlight cpp %}
 // Log.h
 
-class Log {
+class Log 
+{
 	friend class LogInit;
 	static Log* s_instance;
 	
   // remaining Log declaration as before
 };
 
-struct LogInit {
+struct LogInit 
+{
 	LogInit();
 	~LogInit();
 	static int s_count;
@@ -154,14 +166,18 @@ This means that every translation unit which includes `Log.h` will get it's own 
 Log* Log::s_instance;
 int LogInit::s_count;
 
-LogInit::LogInit() {
-	if (++s_count == 1) {
+LogInit::LogInit() 
+{
+	if (++s_count == 1) 
+	{
 		Log::s_instance = new Log();
 	}
 }
 
-LogInit::~LogInit() {
-	if (--s_count == 0) {
+LogInit::~LogInit() 
+{
+	if (--s_count == 0) 
+	{
 		delete Log::s_instance;
 	}
 }
