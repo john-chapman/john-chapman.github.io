@@ -11,11 +11,11 @@ $base-line-height: 1.5;
 
 $spacing-unit:     30px;
 
-$text-color:       #A2AEBB;
-$background-color: #272636;//#c8d1ce;
-$brand-color:      #56638A;
+$text-color:       rgb(210, 210, 210);
+$background-color: #000047;
+$brand-color:      rgb(215, 215, 215);
 
-$grey-color:       #6B6D76;
+$grey-color:       rgb(155, 155, 155);
 $grey-color-mid:   lighten($grey-color, 30%);
 $grey-color-light: lighten($grey-color, 40%);
 $grey-color-dark:  darken($grey-color, 25%);
