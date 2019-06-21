@@ -7,9 +7,9 @@ published: true
 tags: c++, idioms, schwartz, nifty
 ---
 
-In this post I'll discuss the problem of initializing global variables with `static` storage duration, and show you what I think is the best solution which C++ has to offer.
+In this post I'll discuss the problem of initializing global variables with `static` storage duration, and show you some of the solutions available in C++.
 
-C++ makes some rather sparse guarantees about the initialization of such global variables:
+C++ makes some pretty sparse guarantees about the initialization of such global variables:
 
 - Storage for them is zero-initialized.
 - Initialization happens either prior to the first statement of the main function, or before the first use of the variable.
@@ -135,7 +135,7 @@ This is a complete solution, but not a particularly elegant one. It depends enti
 
 ## Solution 3: Schwarz Counter ##
 
-And so at last we come to the 'Schwarz' or 'Nifty' counter. The idea is simple: we declare a new class or struct `LogInit`, plus a static instance of `LogInit` _in the header_:
+And so at last we come to the 'Schwarz' or 'Nifty' counter. The idea is to declare a new class or struct `LogInit`, plus a static instance of `LogInit` _in the header_:
 
 {% highlight cpp %}
 // Log.h
@@ -188,12 +188,9 @@ LogInit::~LogInit()
 
 _I've allocated `Log::s_instance` on the heap for brevity, but you can imagine other solutions e.g. using aligned storage and placement new, or calling static `Init()` and `Shutdown()` methods._
 
-As you can see, we use `s_count` to ensure that the ctor/dtor are called exactly once, on the first and last calls to `LogInit()` and `~LogInit()` respectively. Because each translation unit gets its own `LogInit` instance, whichever 'goes first' during the pre-main initialization will increment `s_count` to 1 and subsequently call the `Log` ctor. Conversely, whichever translation unit 'goes last' during the post-main deinitialization will decrement `s_count` to 0 and call the `Log` dtor. Adding new dependencies 'just works' - we never have to worry about getting the initialization order right since the counter handles this for us. With one exception:
+We're using `s_count` to ensure that the ctor/dtor are called *exactly* once, on the first and last calls to `LogInit()` and `~LogInit()` respectively. Because each translation unit gets its own `LogInit` instance, whichever 'goes first' during the pre-main initialization will increment `s_count` to 1 and subsequently call the `Log` ctor. Conversely, whichever translation unit 'goes last' during the post-main deinitialization will decrement `s_count` to 0 and call the `Log` dtor. Adding new dependencies 'just works' - we never have to worry about getting the initialization order right since the counter handles this for us. With one exception:
 
 ## Initialization Dependencies ##
 
 What if `Log` depends on another singleton `FileSystem` (to create the log file), but `FileSystem` also depends on `Log` (to print an error message)? The Schwarz counter idiom can't help us here: there's no way to order the initialization of `Log` and `FileSystem` which works. 
 The only advice in this case is to avoid cyclic dependencies like this - remove any `Log::GetInstance()->write()` calls from the `FileSystem` ctor/dtor, or vice versa. Dropping an `assert` in `GetInstance()` to check that the init happened is also useful. Hopefully these cases will be quite rare and easy to resolve by design. Note that this problem only applies to dependencies in the initialization/deinitialization - everywhere else is safe.
-
-
-So that's the Schwarz counter - hopefully you can see why it's also called 'Nifty'.

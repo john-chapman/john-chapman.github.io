@@ -177,7 +177,7 @@ void KernelOptimizeBilinear2d(int _width, const float* _weightsIn, float* weight
 
 ## Appendix B - Computing Gaussian Weights ##
 
-Theo Mader has a very nifty web-based Gaussian weights calculator [here](http://dev.theomader.com/gaussian-kernel-calculator/). I've also provided some C code for generating Gaussian and binomial kernels in the [sample project](https://github.com/john-chapman/GfxSamples/blob/master/src/Convolution/Convolution.cpp)).
+Theo Mader has a very nifty web-based Gaussian weights calculator [here](http://dev.theomader.com/gaussian-kernel-calculator/). I've also provided some C code for generating Gaussian and binomial kernels in the [sample project](https://github.com/john-chapman/GfxSamples/blob/master/src/Convolution/Convolution.cpp).
 
 An interesting point to note about Gaussian kernels is the standard deviation parameter _sigma_ (_σ_). It's easiest to understand this parameter by looking at how different values affect the Gaussian distribution:
 
