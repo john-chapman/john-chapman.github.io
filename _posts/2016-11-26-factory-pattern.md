@@ -45,9 +45,11 @@ We'll return to (2) after I've presented the factory base class. For (1), we can
 {% highlight cpp %}
 Projectile* Projectile::Create(const char* _name) 
 {
-	if (strcmp(_name, "Bullet") == 0) {
+	if (strcmp(_name, "Bullet") == 0) 
+	{
 		return new Bullet;
-	} else if (strcmp(_name, "Grenade") == 0) {
+	} else if (strcmp(_name, "Grenade") == 0) 
+	{
 		return new Grenade;
 	}
 	return nullptr; // oops, name invalid
@@ -165,7 +167,8 @@ _Note that the definitions of `Bullet` and `Grenade` don't need to be public - i
 The other desirable feature I mentioned earlier (iterating over registered subclasses) can be easily implemented in terms of `ClassRef`:
 
 {% highlight cpp %}
-for (int i = 0; i < Projectile::GetClassRefCount(); ++i) {
+for (int i = 0; i < Projectile::GetClassRefCount(); ++i) 
+{
 	const ClassRef* cref = Projectile::GetClassRef(i);
 	// do stuff with cref, e.g. get the name or call Projectile::Create(cref)
 }
@@ -209,7 +212,8 @@ ClassRef(const char* _name, CreateFunc* _create)
 	, m_nameHash(_name)
 	, create(_create)
 {
-	if (!s_registry) {
+	if (!s_registry) 
+	{
 		s_registry = new Map<ClassRef*>; // s_registry is now a ptr
 	}
 	(*s_registry)[m_nameHash] = this;

@@ -44,7 +44,8 @@ The number of samples and sample spacing can be exposed as external controls.
 vec2 uv = vec2(1.0) - vUv; // flip the texture coordinates
 vec3 ret = vec3(0.0);
 vec2 ghostVec = (vec2(0.5) - uv) * uGhostSpacing;
-for (int i = 0; i < uGhostCount; ++i) {
+for (int i = 0; i < uGhostCount; ++i) 
+{
 	vec2 suv = fract(uv + ghostVec * vec2(i));
 	float d = distance(suv, vec2(0.5));
 	float weight = 1.0 - smoothstep(0.0, 0.75, d); // reduce contributions from samples at the screen edge

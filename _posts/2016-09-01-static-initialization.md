@@ -7,9 +7,9 @@ published: true
 tags: c++, idioms, schwartz, nifty
 ---
 
-In this post I'll discuss the problem of initializing global variables with `static` storage duration, and show you what I think is the best solution which C++ has to offer.
+In this post I'll discuss the problem of initializing global variables with `static` storage duration, and show you some of the solutions available in C++.
 
-C++ makes some rather sparse guarantees about the initialization of such global variables:
+C++ makes some pretty sparse guarantees about the initialization of such global variables:
 
 - Storage for them is zero-initialized.
 - Initialization happens either prior to the first statement of the main function, or before the first use of the variable.
@@ -24,7 +24,8 @@ Let's begin with an example which exhibits the behaviour we're talking about. Im
 // Log.h
 #include <cstdio>
 
-class Log {
+class Log 
+{
 	static Log s_instance;
 	FILE* m_file;
 	
@@ -42,15 +43,18 @@ public:
 
 Log Log::s_instance;
 
-void Log::write(const char* _msg) {
+void Log::write(const char* _msg) 
+{
 	fprintf(m_file, _msg);
 }
 
-Log::Log() {
+Log::Log() 
+{
 	m_file = fopen("log.txt", "w");
 }
 
-Log::~Log() {
+Log::~Log() 
+{
 	fclose(m_file);
 }
 {% endhighlight %}
@@ -61,7 +65,8 @@ Now let's imagine another singleton (imaginatively named `Subsystem`) which atte
 
 {% highlight cpp %}
 // Subsystem.h
-class Subsystem {
+class Subsystem 
+{
 	static Subsystem s_instance;
 
 	Subsystem();
@@ -75,11 +80,13 @@ class Subsystem {
 
 Subsystem Subsystem::s_instance;
 
-Subsystem::Subsystem() {
+Subsystem::Subsystem() 
+{
 	Log::GetInstance()->write("Subsystem Initialized!");
 }
 
-Subsystem::~Subsystem() {
+Subsystem::~Subsystem() 
+{
 	Log::GetInstance()->write("Subsystem Deinitialized!");
 }
 {% endhighlight %}
@@ -92,8 +99,10 @@ _With Visual Studio I was able to get this code to fail consistently by ensuring
 One solution is to use lazy initialization. During `Log::write()` we simply check if the file was created, and create it if it wasn't:
 
 {% highlight cpp %}
-void Log::write(const char* _msg) {
-	if (!m_file) { // m_file is guaranteed to be zero-initialized
+void Log::write(const char* _msg) 
+{
+	if (!m_file) 
+	{ // m_file is guaranteed to be zero-initialized
 		m_file = fopen("log.txt", "w"); 
 	}
 	fprintf(m_file, _msg);
@@ -110,7 +119,8 @@ Another idea might be to provide explicit `Init()` and `Shutdown()` methods for 
 #include "Log.h"
 #include "Subsystem.h"
 
-int main(int, char**) {
+int main(int, char**) 
+{
 	Log::Init();            // create the log file first
 	Subsystem::Init();
 	
@@ -125,19 +135,21 @@ This is a complete solution, but not a particularly elegant one. It depends enti
 
 ## Solution 3: Schwarz Counter ##
 
-And so at last we come to the 'Schwarz' or 'Nifty' counter. The idea is simple: we declare a new class or struct `LogInit`, plus a static instance of `LogInit` _in the header_:
+And so at last we come to the 'Schwarz' or 'Nifty' counter. The idea is to declare a new class or struct `LogInit`, plus a static instance of `LogInit` _in the header_:
 
 {% highlight cpp %}
 // Log.h
 
-class Log {
+class Log 
+{
 	friend class LogInit;
 	static Log* s_instance;
 	
   // remaining Log declaration as before
 };
 
-struct LogInit {
+struct LogInit 
+{
 	LogInit();
 	~LogInit();
 	static int s_count;
@@ -154,14 +166,18 @@ This means that every translation unit which includes `Log.h` will get it's own 
 Log* Log::s_instance;
 int LogInit::s_count;
 
-LogInit::LogInit() {
-	if (++s_count == 1) {
+LogInit::LogInit() 
+{
+	if (++s_count == 1) 
+	{
 		Log::s_instance = new Log();
 	}
 }
 
-LogInit::~LogInit() {
-	if (--s_count == 0) {
+LogInit::~LogInit() 
+{
+	if (--s_count == 0) 
+	{
 		delete Log::s_instance;
 	}
 }
@@ -172,12 +188,9 @@ LogInit::~LogInit() {
 
 _I've allocated `Log::s_instance` on the heap for brevity, but you can imagine other solutions e.g. using aligned storage and placement new, or calling static `Init()` and `Shutdown()` methods._
 
-As you can see, we use `s_count` to ensure that the ctor/dtor are called exactly once, on the first and last calls to `LogInit()` and `~LogInit()` respectively. Because each translation unit gets its own `LogInit` instance, whichever 'goes first' during the pre-main initialization will increment `s_count` to 1 and subsequently call the `Log` ctor. Conversely, whichever translation unit 'goes last' during the post-main deinitialization will decrement `s_count` to 0 and call the `Log` dtor. Adding new dependencies 'just works' - we never have to worry about getting the initialization order right since the counter handles this for us. With one exception:
+We're using `s_count` to ensure that the ctor/dtor are called *exactly* once, on the first and last calls to `LogInit()` and `~LogInit()` respectively. Because each translation unit gets its own `LogInit` instance, whichever 'goes first' during the pre-main initialization will increment `s_count` to 1 and subsequently call the `Log` ctor. Conversely, whichever translation unit 'goes last' during the post-main deinitialization will decrement `s_count` to 0 and call the `Log` dtor. Adding new dependencies 'just works' - we never have to worry about getting the initialization order right since the counter handles this for us. With one exception:
 
 ## Initialization Dependencies ##
 
 What if `Log` depends on another singleton `FileSystem` (to create the log file), but `FileSystem` also depends on `Log` (to print an error message)? The Schwarz counter idiom can't help us here: there's no way to order the initialization of `Log` and `FileSystem` which works. 
 The only advice in this case is to avoid cyclic dependencies like this - remove any `Log::GetInstance()->write()` calls from the `FileSystem` ctor/dtor, or vice versa. Dropping an `assert` in `GetInstance()` to check that the init happened is also useful. Hopefully these cases will be quite rare and easy to resolve by design. Note that this problem only applies to dependencies in the initialization/deinitialization - everywhere else is safe.
-
-
-So that's the Schwarz counter - hopefully you can see why it's also called 'Nifty'.
