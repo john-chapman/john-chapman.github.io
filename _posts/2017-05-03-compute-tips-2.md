@@ -27,8 +27,8 @@ What we really want is for it to look like this:
 
 ![Correct Thread ID to UV mapping](/images/compute-tips-2/uvmap_right.png)
 
-Here, UV (0,0) and (1,1) fall on texel _edges_. We can achieve this mapping by dropping the `-1` from the code above and adding half a texel:
+Here, UV (0,0) and (1,1) fall on texel _edges_. We can achieve this mapping by dropping the `-1` from the code above and instead adding half a texel:
 
 {% highlight glsl %}
-vec2 uv = vec2(THREAD_ID.xy) / vec2(TEXTURE_SIZE.xy) + 0.5 / vec2(TEXTURE_SIZE.xy);
+vec2 uv = vec2(THREAD_ID.xy + 0.5) / vec2(TEXTURE_SIZE.xy);
 {% endhighlight %}
