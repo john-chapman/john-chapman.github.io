@@ -9,7 +9,7 @@ tags: graphics, vr, virtual reality, motion blur, comfort
 
 I recently got around to integrating the Oculus SDK into my [prototyping framework](https://github.com/john-chapman/GfxSampleFramework). I'd already written a simple renderer in there, so it was pretty quick and easy to start experimenting.
 
-I've had a VR headset since the Oculus CV1, and I've played a fair few VR games with different locomotion mechanics and levels of user comfort. I've often found it curious that no VR game I've played makes use of post-process motion blur, since it seemed to be that this would improve user comfort and immersion in a lot of cases. Then again, maybe there was some subtlety that I'd not considered and perhaps motion blur isn't generally used in VR because it has the opposite effect. Either way, I thought I'd try it out for myself. This post documents the results.
+I've had a VR headset since the Oculus CV1, and I've played a fair few VR games with different locomotion mechanics and levels of user comfort. I've often found it curious that no VR game I've played makes use of post-process motion blur, since it seemed to me that this would improve user comfort and immersion in a lot of cases. Then again, maybe there was some subtlety that I'd not considered and perhaps motion blur isn't generally used in VR because it has the opposite effect. Either way, I thought I'd try it out for myself. This post documents the results.
 
 First of all: what do I mean by 'post-process motion blur'?
 
@@ -39,7 +39,8 @@ So we can take this to mean that any motion of the eyes should _not_ produce mot
 
 If I wave my hand back and forth in front of my face, I clearly perceive something like a 'streak' akin to filmic motion blur:
 
-\IMAGE GIF OF HAND WAVING
+![Foreground Motion Blur](/images/vr-comfort-motion-blur/fg_blur_video.gif)
+![Background Motion Blur](/images/vr-comfort-motion-blur/bg_blur_video.gif)
 
 I say 'I' in the sentence above because it's not clear whether eveyone perceives this phenomenon the same way (although everyone I've asked seems to), although it turns out that there is some experimental [evidence](https://ses.library.usyd.edu.au/bitstream/2123/7432/1/dm-apthorp-2011-thesis.pdf) supporting the presence of motion blur in the human visual system (4).
 
